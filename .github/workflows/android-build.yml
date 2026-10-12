@@ -6,78 +6,55 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      profile:
-        description: 'EAS build profile'
-        required: true
-        default: preview
-        type: choice
-        options:
-          - preview
-          - production
 
 permissions:
   contents: read
+
+env:
+  CI: true
+  EXPO_NO_DOCTOR: '1'
 
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Validate BLISS
+  validate-and-build:
+    name: Build BLISS release APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: corepack enable
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Typecheck
-        run: pnpm check
-      - name: Lint
-        run: pnpm lint
 
-  build:
-    name: Build Android
-    needs: validate
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Enable Corepack
-        run: corepack enable
-      - name: Use Node.js
+      - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
+          cache: npm
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Configure EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-      - name: Build Android artifact
-        env:
-          EAS_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'preview' }}
-        run: eas build --platform android --profile "$EAS_PROFILE" --non-interactive --wait
-      - name: Download APK artifact
-        if: env.EAS_PROFILE == 'preview'
-        run: eas build:download --latest --platform android --path BLISS-preview.apk
-      - name: Upload APK artifact
-        if: env.EAS_PROFILE == 'preview'
+        run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --clean
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x android/gradlew
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: bliss-preview-apk-${{ github.sha }}
-          path: BLISS-preview.apk
+          name: bliss-release-apk-${{ github.sha }}
+          path: android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14

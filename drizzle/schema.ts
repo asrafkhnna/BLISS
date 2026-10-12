@@ -109,3 +109,20 @@ export const userFollows = mysqlTable(
 
 export type UserFollow = typeof userFollows.$inferSelect;
 export type InsertUserFollow = typeof userFollows.$inferInsert;
+
+export const reels = mysqlTable("reels", {
+  id: int("id").autoincrement().primaryKey(),
+  authorId: int("authorId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  kind: mysqlEnum("kind", ["entertainment", "study"]).notNull(),
+  storageKey: text("storageKey").notNull(),
+  mediaUrl: text("mediaUrl").notNull(),
+  contentType: varchar("contentType", { length: 120 }).notNull(),
+  caption: text("caption"),
+  fileSize: int("fileSize").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Reel = typeof reels.$inferSelect;
+export type InsertReel = typeof reels.$inferInsert;

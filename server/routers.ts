@@ -8,6 +8,7 @@ import {
   getUserByHandle,
   getUserByOpenId,
   listInterests,
+  listReels,
   updateBlissProfile,
   searchUsersByHandle,
 } from "./db";
@@ -175,6 +176,18 @@ export const appRouter = router({
           if (error instanceof Error && error.message.includes("cannot follow")) {
             throw new TRPCError({ code: "BAD_REQUEST", message: error.message });
           }
+          return databaseError(error);
+        }
+      }),
+  }),
+
+  reels: router({
+    feed: publicProcedure
+      .input(z.object({ kind: z.enum(["entertainment", "study"]).optional() }).optional())
+      .query(async ({ input }) => {
+        try {
+          return await listReels(input?.kind);
+        } catch (error) {
           return databaseError(error);
         }
       }),

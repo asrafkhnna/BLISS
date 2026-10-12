@@ -7,6 +7,7 @@ import {
   userInterests,
   userPreferences,
   users,
+  reels,
 } from "./schema";
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -15,6 +16,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   interests: many(userInterests),
   followers: many(userFollows, { relationName: "followers" }),
   following: many(userFollows, { relationName: "following" }),
+  reels: many(reels),
 }));
 
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({
@@ -56,5 +58,12 @@ export const userFollowsRelations = relations(userFollows, ({ one }) => ({
     fields: [userFollows.followingId],
     references: [users.id],
     relationName: "following",
+  }),
+}));
+
+export const reelsRelations = relations(reels, ({ one }) => ({
+  author: one(users, {
+    fields: [reels.authorId],
+    references: [users.id],
   }),
 }));

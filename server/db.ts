@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, like } from "drizzle-orm";
+import { and, count, desc, eq, inArray, like } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -9,6 +9,7 @@ import {
   userInterests,
   userPreferences,
   users,
+  reels,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -285,4 +286,73 @@ export async function getUserBySessionTokenHash(tokenHash: string) {
 export async function deleteAuthSession(tokenHash: string) {
   const db = requireDb(await getDb());
   await db.delete(authSessions).where(eq(authSessions.tokenHash, tokenHash));
+}
+
+export async function createReel(input: {
+  authorId: number;
+  kind: "entertainment" | "study";
+  storageKey: string;
+  mediaUrl: string;
+  contentType: string;
+  caption?: string | null;
+  fileSize: number;
+}) {
+  const db = requireDb(await getDb());
+  const result = await db.insert(reels).values({
+    authorId: input.authorId,
+    kind: input.kind,
+    storageKey: input.storageKey,
+    mediaUrl: input.mediaUrl,
+    contentType: input.contentType,
+    caption: input.caption ?? null,
+    fileSize: input.fileSize,
+  });
+  const reelId = Number(result[0].insertId);
+  return getReelById(reelId);
+}
+
+export async function getReelById(reelId: number) {
+  const db = requireDb(await getDb());
+  const [row] = await db
+    .select({
+      id: reels.id,
+      kind: reels.kind,
+      mediaUrl: reels.mediaUrl,
+      contentType: reels.contentType,
+      caption: reels.caption,
+      fileSize: reels.fileSize,
+      createdAt: reels.createdAt,
+      authorId: users.id,
+      authorName: users.name,
+      authorHandle: users.userHandle,
+      authorAvatarUrl: users.avatarUrl,
+    })
+    .from(reels)
+    .innerJoin(users, eq(reels.authorId, users.id))
+    .where(eq(reels.id, reelId))
+    .limit(1);
+  return row;
+}
+
+export async function listReels(kind?: "entertainment" | "study") {
+  const db = requireDb(await getDb());
+  return db
+    .select({
+      id: reels.id,
+      kind: reels.kind,
+      mediaUrl: reels.mediaUrl,
+      contentType: reels.contentType,
+      caption: reels.caption,
+      fileSize: reels.fileSize,
+      createdAt: reels.createdAt,
+      authorId: users.id,
+      authorName: users.name,
+      authorHandle: users.userHandle,
+      authorAvatarUrl: users.avatarUrl,
+    })
+    .from(reels)
+    .innerJoin(users, eq(reels.authorId, users.id))
+    .where(kind ? eq(reels.kind, kind) : undefined)
+    .orderBy(desc(reels.createdAt), desc(reels.id))
+    .limit(100);
 }

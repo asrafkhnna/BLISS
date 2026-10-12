@@ -56,7 +56,9 @@ const publicRuntime = {
     process.env.VITE_APP_ID ??
     process.env.EXPO_PUBLIC_APP_ID ??
     "",
-  apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "",
+  apiBaseUrl:
+    process.env.EXPO_PUBLIC_API_BASE_URL ??
+    "https://3000-imapa5k50076r449uimet-3fad0e05.sg2.manus.computer",
 };
 
 const config: ExpoConfig = {

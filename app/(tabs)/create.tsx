@@ -7,6 +7,8 @@ import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "reac
 import { BlissLogo } from "@/components/bliss-logo";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
+import { getApiBaseUrl } from "@/constants/oauth";
+import * as Auth from "@/lib/_core/auth";
 
 type ReelType = "entertainment" | "study";
 type ContentKind = "reel" | "post";
@@ -20,10 +22,12 @@ export default function CreateScreen() {
   const [contentKind, setContentKind] = useState<ContentKind>("reel");
   const [reelType, setReelType] = useState<ReelType>("entertainment");
   const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoMimeType, setVideoMimeType] = useState("video/mp4");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [postText, setPostText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const openCamera = async () => {
     setError(null);
@@ -45,6 +49,7 @@ export default function CreateScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], allowsEditing: true, videoMaxDuration: 60, quality: 0.85 });
     if (!result.canceled && result.assets[0]?.uri) {
       setVideoUri(result.assets[0].uri);
+      setVideoMimeType(result.assets[0].mimeType ?? "video/mp4");
       setStep("reelPreview");
     }
   };
@@ -68,6 +73,7 @@ export default function CreateScreen() {
       const result = await cameraRef.current.recordAsync({ maxDuration: 60 });
       if (result?.uri) {
         setVideoUri(result.uri);
+        setVideoMimeType("video/mp4");
         setStep("reelPreview");
       }
     } catch {
@@ -77,12 +83,44 @@ export default function CreateScreen() {
     }
   };
 
-  const publish = () => {
+  const publish = async () => {
     if (contentKind === "post" && !postText.trim() && !imageUri) {
       setError("Add a photo or write something before publishing.");
       return;
     }
-    setStep("published");
+    if (contentKind === "post") {
+      setStep("published");
+      return;
+    }
+    if (!videoUri) {
+      setError("Choose or record a video before publishing.");
+      return;
+    }
+
+    setError(null);
+    setIsPublishing(true);
+    try {
+      const form = new FormData();
+      form.append("video", {
+        uri: videoUri,
+        name: `bliss-reel-${Date.now()}.mp4`,
+        type: videoMimeType,
+      } as any);
+      form.append("kind", reelType);
+      const token = await Auth.getSessionToken();
+      const response = await fetch(`${getApiBaseUrl()}/api/reels/upload`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: form,
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error ?? "Reel upload failed");
+      setStep("published");
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Reel upload failed. Please try again.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   if (step === "camera") {
@@ -112,7 +150,7 @@ export default function CreateScreen() {
   }
 
   if (step === "reelPreview") {
-    return <ScreenContainer className="px-5 pt-3"><ScrollView contentContainerStyle={{ paddingBottom: 32 }}><View className="flex-row items-center justify-between"><TouchableOpacity onPress={() => setStep("choose")}><Text className="text-base font-semibold text-muted">Cancel</Text></TouchableOpacity><Text className="text-lg font-bold text-foreground">New Reel</Text><TouchableOpacity onPress={publish}><Text className="text-base font-bold text-[#6EA8FF]">Publish</Text></TouchableOpacity></View><View className="mt-7 h-[390px] items-center justify-center overflow-hidden rounded-[30px] border border-[#294A65] bg-[#0E1C2C]"><View className="h-20 w-20 items-center justify-center rounded-full bg-[#1B3650]"><IconSymbol name="play.circle.fill" size={48} color="#6EDBFF" /></View><Text className="mt-5 text-lg font-bold text-foreground">Your video is ready</Text><Text className="mt-2 max-w-[250px] text-center text-sm leading-5 text-[#93A9BD]">Preview playback will appear here once the media upload pipeline is connected.</Text></View><Text className="mt-3 text-center text-xs text-muted">{videoUri ? "Video selected from your device" : "Video captured in BLISS"}</Text><Text className="mt-8 text-xl font-bold text-foreground">Choose your Reel type</Text><View className="mt-4 gap-3"><TouchableOpacity onPress={() => setReelType("entertainment")} className={reelType === "entertainment" ? "rounded-[24px] border border-[#6EA8FF] bg-[#172B45] p-5" : "rounded-[24px] border border-border bg-surface p-5"}><Text className="text-lg font-bold text-foreground">Entertainment Reel</Text><Text className="mt-1 text-sm text-muted">Share moments, trends and good energy.</Text></TouchableOpacity><TouchableOpacity onPress={() => setReelType("study")} className={reelType === "study" ? "rounded-[24px] border border-[#B98CFF] bg-[#171126] p-5" : "rounded-[24px] border border-border bg-surface p-5"}><Text className="text-lg font-bold text-foreground">Study Reel</Text><Text className="mt-1 text-sm text-muted">Share methods, notes and learning wins.</Text></TouchableOpacity></View><TouchableOpacity onPress={publish} className="mt-7 items-center rounded-full bg-[#6EA8FF] py-4"><Text className="font-bold text-[#050506]">Publish to BLISS</Text></TouchableOpacity></ScrollView></ScreenContainer>;
+    return <ScreenContainer className="px-5 pt-3"><ScrollView contentContainerStyle={{ paddingBottom: 32 }}><View className="flex-row items-center justify-between"><TouchableOpacity onPress={() => setStep("choose")}><Text className="text-base font-semibold text-muted">Cancel</Text></TouchableOpacity><Text className="text-lg font-bold text-foreground">New Reel</Text><TouchableOpacity disabled={isPublishing} onPress={publish}><Text className="text-base font-bold text-[#6EA8FF]">{isPublishing ? "Uploading…" : "Publish"}</Text></TouchableOpacity></View><View className="mt-7 h-[390px] items-center justify-center overflow-hidden rounded-[30px] border border-[#294A65] bg-[#0E1C2C]"><View className="h-20 w-20 items-center justify-center rounded-full bg-[#1B3650]"><IconSymbol name="play.circle.fill" size={48} color="#6EDBFF" /></View><Text className="mt-5 text-lg font-bold text-foreground">Your video is ready</Text><Text className="mt-2 max-w-[250px] text-center text-sm leading-5 text-[#93A9BD]">Your Reel will be stored securely and appear at the top of the live feed after publishing.</Text></View><Text className="mt-3 text-center text-xs text-muted">{videoUri ? "Video selected from your device" : "Video captured in BLISS"}</Text><Text className="mt-8 text-xl font-bold text-foreground">Choose your Reel type</Text><View className="mt-4 gap-3"><TouchableOpacity onPress={() => setReelType("entertainment")} className={reelType === "entertainment" ? "rounded-[24px] border border-[#6EA8FF] bg-[#172B45] p-5" : "rounded-[24px] border border-border bg-surface p-5"}><Text className="text-lg font-bold text-foreground">Entertainment Reel</Text><Text className="mt-1 text-sm text-muted">Share moments, trends and good energy.</Text></TouchableOpacity><TouchableOpacity onPress={() => setReelType("study")} className={reelType === "study" ? "rounded-[24px] border border-[#B98CFF] bg-[#171126] p-5" : "rounded-[24px] border border-border bg-surface p-5"}><Text className="text-lg font-bold text-foreground">Study Reel</Text><Text className="mt-1 text-sm text-muted">Share methods, notes and learning wins.</Text></TouchableOpacity></View><TouchableOpacity disabled={isPublishing} onPress={publish} className="mt-7 items-center rounded-full bg-[#6EA8FF] py-4"><Text className="font-bold text-[#050506]">{isPublishing ? "Uploading Reel…" : "Publish to BLISS"}</Text></TouchableOpacity>{error ? <Text className="mt-4 text-center text-sm font-semibold text-[#FF7187]">{error}</Text> : null}</ScrollView></ScreenContainer>;
   }
 
   return (

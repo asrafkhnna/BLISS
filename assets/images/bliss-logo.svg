@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <title>BLISS premium star and circle logo</title>
+  <defs>
+    <linearGradient id="neonGradient" x1="52" y1="44" x2="462" y2="456" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D9FF"/>
+      <stop offset="0.48" stop-color="#4C9CFF"/>
+      <stop offset="1" stop-color="#9A4DFF"/>
+    </linearGradient>
+  </defs>
+  <path d="M256 38L309 184L462 190L340 281L380 438L256 350L132 438L172 281L50 190L203 184L256 38Z" stroke="url(#neonGradient)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="128" stroke="url(#neonGradient)" stroke-width="16"/>
+  <circle cx="256" cy="256" r="15" fill="#F6FBFF"/>
+</svg>

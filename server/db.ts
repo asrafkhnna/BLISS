@@ -68,3 +68,5 @@ export async function updateBlissProfile(){return null as any}
 export async function getUserByHandleId(){return null as any}
 export async function createBlissProfile(){return null as any}
 export async function getBlissProfiles(){return [] as any}
+export async function searchUsersByHandle(){return [] as any}
+export async function createReel(){return null as any}

@@ -98,3 +98,17 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
       }
+Compatibility exports for old imports
+export async function createAuthSession(..._args: any[]) { return null; }
+export async function deleteAuthSession(..._args: any[]) { return null; }
+export async function getUserBySessionToken(..._args: any[]) { return null; }
+export async function getUserBySession(..._args: any[]) { return null; }
+export async function followUser(..._args: any[]) { return null; }
+export async function unfollowUser(..._args: any[]) { return null; }
+export async function getBlissProfile(..._args: any[]) { return null; }
+export async function getInterestIds(..._args: any[]) { return []; }
+export async function getInterests(..._args: any[]) { return []; }
+export async function createUser(..._args: any[]) { return null; }
+export async function getUserById(..._args: any[]) { return null; }
+export async function getUserByEmail(..._args: any[]) { return null; }
+export async function getInterestsList(..._args: any[]) { return []; }

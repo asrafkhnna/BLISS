@@ -24,7 +24,6 @@ export function createTRPCClient() {
       httpBatchLink({
       url: 'https://bliss-1pqu.vercel.app/api/trpc',
         // tRPC v11: transformer MUST be inside httpBatchLink, not at root
-        transformer: superjson,
         async headers() {
           const token = await Auth.getSessionToken();
           return token ? { Authorization: `Bearer ${token}` } : {};
@@ -40,3 +39,4 @@ export function createTRPCClient() {
     ],
   });
         }
+          

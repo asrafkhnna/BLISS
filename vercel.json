@@ -1,5 +1,10 @@
 {
   "installCommand": "npm install --legacy-peer-deps",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/client"
+  "buildCommand": "npm run build && npx expo export --platform web --output-dir dist/client",
+  "outputDirectory": "dist/client",
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/trpc/:path*", "destination": "/api" }
+  ]
 }

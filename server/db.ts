@@ -98,7 +98,6 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
       }
-/ Compatibility exports for old imports
 // Compatibility exports for old imports
 export async function createAuthSession(){return null}
 export async function deleteAuthSession(){return null}

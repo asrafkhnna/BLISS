@@ -22,7 +22,7 @@ export function createTRPCClient() {
   return trpc.createClient({
     links: [
       httpBatchLink({
-      url: 'https://bliss-1pqu.vercel.app/api/trpc',
+      url: '/api/trpc',
                 transformer: superjson,
         // tRPC v11: transformer MUST be inside httpBatchLink, not at root
         async headers() {

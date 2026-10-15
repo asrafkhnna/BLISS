@@ -22,9 +22,6 @@ jobs:
   validate-and-build:
     name: Build BLISS release APK
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: BLISS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,17 +33,21 @@ jobs:
           cache: ''
 
       - name: Install dependencies
+        working-directory: BLISS
         run: npm install
 
       - name: Typecheck
+        working-directory: BLISS
         run: npx tsc --noEmit
         continue-on-error: true
 
       - name: Lint
+        working-directory: BLISS
         run: npm run lint
         continue-on-error: true
 
       - name: Generate Android project
+        working-directory: BLISS
         run: npx expo prebuild --platform android --clean
 
       - name: Cache Gradle
@@ -55,13 +56,14 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            android/.gradle
-            android/app/build
+            BLISS/android/.gradle
+            BLISS/android/app/build
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
       - name: Make Gradle wrapper executable
+        working-directory: BLISS
         run: chmod +x android/gradlew
 
       - name: Build release APK
